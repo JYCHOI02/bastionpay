@@ -3,6 +3,20 @@
 > TEAM KAVANAH · 오픈뱅킹·가상계좌 서비스를 지키는 웹 방어 · 망 분리 · 관제 · 자동 대응 체계
 > 정리일 2026-11-09
 
+## 저장소 정보
+
+| 항목 | 내용 |
+|---|---|
+| 팀 원본 저장소 | https://github.com/LeeHakSan/bastionpay |
+| 본인 저장소(fork) | https://github.com/JYCHOI02/bastionpay |
+| 본인 | 최재영 (TEAM KAVANAH · D) |
+| 담당 역할·기여 범위 | **n8n SOAR · 탐지/대응** — Graylog·Wazuh 경보 수신, 정규화·검증·분기, 인시던트 티켓·Discord/Telegram 알림·자동 차단, 중복 억제, 탐지 규칙 및 공격 재현 트리거 |
+
+> 이 저장소는 팀 원본을 fork 한 **개인 포트폴리오용** 저장소입니다.
+> **본인(최재영)이 직접 작업·검증한 내용과 설치 방법은 [`cjy/`](cjy/) 폴더에 정리**되어 있습니다 — 작업 요약([cjy/README.md](cjy/README.md)), 구성별 설치 가이드([cjy/HowToSetUp/](cjy/HowToSetUp/)), 공격 재현 트리거([cjy/attack_trigger/](cjy/attack_trigger/)), 회고([cjy/회고.md](cjy/회고.md)).
+> 새 PC·VM에서 처음부터 설치하려면 [cjy/HowToSetUp/](cjy/HowToSetUp/)의 순서(web → graylog → n8n → wazuh → pfSense)를 따르세요.
+> 아래 1~12장은 팀 공통 정리이며, 파트별 작성자(출처)는 각 장 제목 아래에 표시했습니다.
+
 ---
 
 ## 목차
@@ -19,6 +33,7 @@
 10. [남은 일과 확인하지 못한 것](#10-남은-일과-확인하지-못한-것)
 11. [성과와 향후 방향](#11-성과와-향후-방향)
 12. [발표 예상 질문(Q&A)](#12-발표-예상-질문qa)
+13. [민감정보 · 환경 변수 설정](#13-민감정보--환경-변수-설정)
 
 ---
 
@@ -153,6 +168,8 @@ flowchart LR
 ---
 
 ## 5. A · 웹 애플리케이션과 DB
+
+> **출처: LHS**
 
 ### 5.1 개발 이력
 
@@ -308,6 +325,8 @@ flowchart LR
 
 ## 6. B · pfSense 망 구성
 
+> **출처: SHS**
+
 ### 6.1 시스템
 
 | 항목 | 값 |
@@ -427,6 +446,8 @@ pfSense가 아닌 **PC16 호스트 방화벽**에서 TCP 443의 출발지를 제
 ---
 
 ## 7. C · SIEM 관제 (Graylog·Wazuh)
+
+> **출처: SHH**
 
 ### 7.1 구성
 
@@ -653,3 +674,58 @@ Oracle이 트랜잭션 처리가 강력하고 금융권에서 많이 쓰이는 �
 - 같은 거래고유번호·요청 ID는 한 번만 처리하도록 DB 유니크 제약으로 막아, 재전송·중복 요청이 두 번 반영되지 않습니다.
 
 MySQL(InnoDB)도 ACID 트랜잭션과 행 잠금을 지원하기 때문에, 이 구조로 실습 범위의 정합성은 충분히 지킬 수 있었습니다.
+
+---
+
+## 13. 민감정보 · 환경 변수 설정
+
+이 저장소에는 **실제 비밀번호·키·토큰을 올리지 않습니다.** 자리마다 placeholder만 두었으니, 설치할 때 아래 값을 직접 만들어 채워 넣으세요. 실제 값은 `.env`(gitignore 대상)나 각 설정 파일에만 넣고 git 에는 올리지 않습니다.
+
+### 13.1 웹 서버 · DB (`.env`)
+`.env.example`을 `.env`로 복사한 뒤 채웁니다.
+
+| 키 | 넣을 값 |
+|---|---|
+| `DB_USERNAME` / `DB_PASSWORD` | 웹 앱 DB 계정(읽기·쓰기)과 비밀번호 |
+| `DB_MIGRATION_USERNAME` / `DB_MIGRATION_PASSWORD` | 마이그레이션(DDL) 전용 계정과 비밀번호 |
+| `JWT_SECRET` | 로그인 토큰 서명 키. 32바이트 이상 무작위 문자열 |
+| `OPENBANKING_CLIENT_ID` / `OPENBANKING_CLIENT_SECRET` | MockBank 연동 클라이언트 값 |
+| `OPENBANKING_ORG_CODE` / `OPENBANKING_PASS_PHRASE` | 이용기관코드·입금이체 암호문구 |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | 가입 인증 메일용 Gmail 계정·앱 비밀번호(선택, 비우면 콘솔 출력) |
+| `SECURITY_API_KEY`(선택) | n8n 등 서버 간 호출용 API 키. 비우면 `/api/admin/**` 는 항상 401 |
+
+> MockBank 전용 DB 비밀번호는 `mockbank-mysql/.env.example` → `mockbank-mysql/.env`로 따로 채웁니다.
+
+### 13.2 Wazuh → n8n 웹훅 키
+Wazuh가 n8n으로 경보를 보낼 때 쓰는 **공유 인증 키**입니다. 저장소에는 placeholder(`REPLACE_WITH_YOUR_WAZUH_WEBHOOK_KEY`)로 두었습니다.
+
+| 위치 | 넣을 값 |
+|---|---|
+| `_wazuh/wazuh-config/ossec.conf` 의 `<integration><api_key>` | 아래에서 만든 키 |
+| `_wazuh/wazuh-config/n8n-webhook-key.txt` | 같은 키(참고용). 실제 값은 git 에 올리지 않음 |
+| n8n `Webhook(Wazuh)` 노드의 Header Auth(`X-Wazuh-Webhook-Key`) | 같은 키 |
+
+세 곳에 **같은 값**이 들어가야 합니다. 키 만들기:
+```bash
+# Git Bash
+openssl rand -hex 32
+```
+```powershell
+# PowerShell
+[guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")
+```
+
+### 13.3 n8n 워크플로 Credential (git 에 올라가지 않음)
+`_n8n/*.json`에는 placeholder(`REPLACE`, `<YOUR_TELEGRAM_CHAT_ID>`)만 있습니다. 실제 값은 n8n Credential/노드에만 넣습니다.
+
+| 항목 | 넣을 값 |
+|---|---|
+| Header Auth (`X-API-Key`) | 웹 서버 `SECURITY_API_KEY`와 같은 값 |
+| Discord Webhook URL | Discord 채널 웹후크 URL |
+| Telegram 봇 토큰 / Chat ID | BotFather 발급 토큰, 본인 Chat ID |
+
+### 13.4 개발용 HTTPS 인증서
+`config/local-dev.p12`(gitignore 대상)는 직접 발급합니다. 발급 방법은 [cjy/HowToSetUp/web-server-setup.md](cjy/HowToSetUp/web-server-setup.md) 참고.
+
+> ⚠️ **이미 공개된 적이 있는 키는 반드시 새로 발급하세요.** git 커밋 이력에 올라갔던 키는 지워도 노출된 것으로 봐야 합니다.
+

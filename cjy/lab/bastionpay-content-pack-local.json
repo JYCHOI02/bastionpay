@@ -1,0 +1,3153 @@
+{
+  "v": 1,
+  "id": "b5e0bf4b-1f3a-47ee-a7e6-a692547e132d",
+  "rev": 1,
+  "name": "BastionPay Security Monitoring (Local 192.168.3.12)",
+  "summary": "BastionPay 로그 수집 및 보안 이벤트 탐지 설정",
+  "description": "BastionPay 로그인 실패, 반복 이체 실패·환불, 이체 요청 급증, API 인증 실패 등의 탐지 설정과 연결된 알림·수집·파이프라인 설정. 원본 이벤트의 활성·비활성 상태를 보존한 프로젝트용 선별 백업. / 192.168.3.12 단독 재현용: 기존 Graylog에 이미 있는 Wazuh 입력·스트림·파이프라인과 hping3 입력을 뺐고, 알림 주소를 host.docker.internal:5678로 바꿈.",
+  "vendor": "KAVANAH",
+  "url": "",
+  "parameters": [],
+  "entities": [
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "002342fb-3494-4f11-b020-56db5c5f4531",
+      "data": {
+        "field_spec": {
+          "src_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "LOGIN_FAILURE",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "HIGH",
+                "require_values": false
+              }
+            ]
+          },
+          "outcome": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "FAILURE",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "BAD_CREDENTIALS",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:LOGIN_FAILURE AND filebeat_outcome:FAILURE AND filebeat_reason_code:BAD_CREDENTIALS"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip"
+          ],
+          "series": [
+            {
+              "type": "card",
+              "id": "card-filebeat_login_subject_hash",
+              "field": "filebeat_login_subject_hash"
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">",
+              "left": {
+                "expr": "number-ref",
+                "ref": "card-filebeat_login_subject_hash"
+              },
+              "right": {
+                "expr": "number",
+                "value": 4
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "bbb272da-a2d0-4f44-a6a3-a8f163caad03"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-06T03:54:25.591Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-05T02:57:16.444Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | L2_동일 IP 다중 계정 로그인 실패"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [
+          "src_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "같은 출발지 IP에서 서로 다른 합성 계정 5개 이상으로 잘못된 비밀번호 로그인 실패가 5분 안에 발생하면 계정 스프레이 가능성으로 검토 티켓을 생성합니다. 자동 IP 차단은 수행하지 않습니다."
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "aaac16a7-00f1-40c7-a426-1fd541bef479",
+      "data": {
+        "field_spec": {
+          "member_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_member_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_event_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_reason_code}",
+                "require_values": false
+              }
+            ]
+          },
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "transfer_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_transfer_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "currency": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_currency}",
+                "require_values": false
+              }
+            ]
+          },
+          "outcome": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_outcome}",
+                "require_values": false
+              }
+            ]
+          },
+          "trace_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_trace_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "amount": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_amount}",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_severity}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_event_type}",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 60000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:TRANSFER_REFUNDED"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [],
+          "series": [],
+          "conditions": {
+            "expression": null
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 2
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "f9905547-4cff-4158-9e5f-30cb052924ee"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-05T08:18:49.513Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 1
+        },
+        "updated_at": "2026-10-22T07:33:15.668Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | S2_이체 실패 후 환불 완료"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "event_id"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "mock 은행의 합성 수취 계좌 처리 실패로 이체가 완료되지 않았고 앱이 환불을 처리했습니다. trasfer_id와 잔액을 확인하세요."
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "44d507fb-2989-4b6e-8de7-a4f0644d8a79",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay → n8n | F_서버 API 인증 실패"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "API_AUTH_FAILED 반복 → n8n Security Alert Intake(운영자 전용 알림, 티켓·차단 없음)"
+        },
+        "config": {
+          "type": "http-notification-v2",
+          "url": {
+            "@type": "string",
+            "@value": "http://host.docker.internal:5678/webhook/bastionpay-graylog"
+          },
+          "skip_tls_verification": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "method": {
+            "@type": "string",
+            "@value": "POST"
+          },
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          },
+          "content_type": {
+            "@type": "string",
+            "@value": "JSON"
+          },
+          "headers": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": ""
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "a2dd641f-67b9-4607-ba29-d654c8c247a7",
+      "data": {
+        "field_spec": {
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "LOGIN_FAILURE",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "MEDIUM",
+                "require_values": false
+              }
+            ]
+          },
+          "outcome": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "FAILURE",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "BAD_CREDENTIALS",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 600000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:LOGIN_FAILURE AND filebeat_outcome:FAILURE AND filebeat_reason_code:BAD_CREDENTIALS"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip",
+            "filebeat_login_subject_hash"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 5
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 2
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "bbb272da-a2d0-4f44-a6a3-a8f163caad03"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-06T03:48:05.402Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-06T03:52:52.750Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | S1_반복 로그인 실패"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "같은 출발지 IP와 같은 비식별 테스트 계정에서 10분 내 로그인 실패 5회 이상이 발생하면 탐지합니다. 합성 계정 잠금 여부를 확인하고 관련 이벤트를 검토합니다."
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "pipeline_rule",
+        "version": "1"
+      },
+      "id": "da8f1a15-3e71-43f1-81d8-495f123bf0fc",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "fill message with event info"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "BastionPay_Rule"
+        },
+        "source": {
+          "@type": "string",
+          "@value": "rule \"fill message with event info\"\nwhen\n  has_field(\"filebeat_event_type\") || has_field(\"event_type\") || has_field(\"rule\")\nthen\n  let rule_name = to_string($message.`rule`, \"\");\n  let evt = to_string($message.event_type, rule_name);\n  let et = to_string($message.filebeat_event_type, evt);\n  let src = to_string($message.src_ip, \"\");\n  let sip = to_string($message.source_ip, src);\n  let ip = to_string($message.filebeat_source_ip, sip);\n  set_field(\"message\", concat(concat(et, \"  |  src=\"), ip));\nend"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "3f04ba59-71a2-469c-b33e-76d2ed5b2d77",
+      "data": {
+        "field_spec": {
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.src_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "IDS_ALERT",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "HIGH",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 30000,
+          "query": {
+            "@type": "string",
+            "@value": "rule:ids-alert"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "000000000000000000000001"
+          ],
+          "execute_every_ms": 30000,
+          "event_limit": 100,
+          "group_by": [
+            "src_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 5
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 2
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "45290a16-0cdf-443c-b14e-447ac9c7fc97"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-05T05:31:44.876Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 120000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-05T02:18:46.591Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | K3_Suricata IDS 경보 폭주 탐지"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "src_ip당 30초 내 rule:ids-alert 5건 이상 → IDS 경보 폭주"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "09ab8ab3-9a46-4056-9ee5-b066200c4260",
+      "data": {
+        "field_spec": {
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "HIGH",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "ACCESS_DENIED",
+                "require_values": false
+              }
+            ]
+          },
+          "src_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 60000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:ACCESS_DENIED AND filebeat_reason_code:INSUFFICIENT_AUTHORITY"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 1
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "45290a16-0cdf-443c-b14e-447ac9c7fc97"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-06T05:07:33.461Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 60000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-05T09:33:08.358Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | K6_ADMIN 권한 탈취 시도 탐지"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "src_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "일반 사용자의 관리자 페이지 무단 접근 및 권한 탈취 시도 탐지"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "cca7170e-f815-4e09-a943-27b0cbb89c06",
+      "data": {
+        "field_spec": {
+          "member_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_member_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "TRANSFER_REQUESTED",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "INFO",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:TRANSFER_REQUESTED"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_member_id"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 5
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 2
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "bbb272da-a2d0-4f44-a6a3-a8f163caad03"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-06T05:20:08.594Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 60000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-05T11:07:59.527Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | 동일 계정 이체 요청 급증"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [
+          "member_id"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "같은 회원 계정에서 5분 안에 이체 요청이 5회 이상 발생했습니다. 부정 거래 확정이 아닌 검토 신호로 분류하고 요청 내역을 확인합니다."
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "stream",
+        "version": "1"
+      },
+      "id": "14e430ad-180a-40cd-9fbd-e5bc8d3acd51",
+      "data": {
+        "alarm_callbacks": [],
+        "outputs": [],
+        "remove_matches": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay Security Events"
+        },
+        "stream_rules": [
+          {
+            "type": {
+              "@type": "string",
+              "@value": "EXACT"
+            },
+            "field": {
+              "@type": "string",
+              "@value": "filebeat_event_source"
+            },
+            "value": {
+              "@type": "string",
+              "@value": "bastionpay_security"
+            },
+            "inverted": {
+              "@type": "boolean",
+              "@value": false
+            },
+            "description": {
+              "@type": "string",
+              "@value": ""
+            }
+          },
+          {
+            "type": {
+              "@type": "string",
+              "@value": "EXACT"
+            },
+            "field": {
+              "@type": "string",
+              "@value": "filebeat_app_name"
+            },
+            "value": {
+              "@type": "string",
+              "@value": "bastionpay"
+            },
+            "inverted": {
+              "@type": "boolean",
+              "@value": false
+            },
+            "description": {
+              "@type": "string",
+              "@value": ""
+            }
+          }
+        ],
+        "alert_conditions": [],
+        "matching_type": {
+          "@type": "string",
+          "@value": "AND"
+        },
+        "disabled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Filebeat로 수집한 BastionPay 보안 이벤트"
+        },
+        "default_stream": {
+          "@type": "boolean",
+          "@value": false
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "d09e3f68-2e60-4557-a1ad-4e2f25b1be51",
+      "data": {
+        "field_spec": {
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "LOGIN_FAILURE",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "HIGH",
+                "require_values": false
+              }
+            ]
+          },
+          "outcome": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "DENIED",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "ACCOUNT_LOCKED",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:LOGIN_FAILURE AND filebeat_outcome:DENIED AND filebeat_reason_code:ACCOUNT_LOCKED"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip",
+            "filebeat_login_subject_hash"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 2
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "bbb272da-a2d0-4f44-a6a3-a8f163caad03"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": {
+          "@type": "string",
+          "@value": "계정 잠금 상태와 관련 이벤트 타임라인을 확인합니다. 자동 IP 차단은 수행하지 않으며, 필요하면 테스트 계정 잠금 상태를 관리자가 점검합니다."
+        },
+        "matched_at": "2026-11-05T08:16:41.565Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-02T00:56:41.550Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | 잠긴 계정 로그인 재시도"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "같은 출발지 IP와 비식별 테스트 계정에서 계정 잠금 이후에도 LOGIN_FAILURE(ACCOUNT_LOCKED)가 5분 안에 3회 이상 발생했습니다. 계정 잠금 상태와 후속 접근을 검토하세요. 자동 IP 차단은 수행하지 않습니다."
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "45290a16-0cdf-443c-b14e-447ac9c7fc97",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay → n8n | Kali-linux webhook"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "n8n 브루트포스/인시던트 webhook"
+        },
+        "config": {
+          "type": "http-notification-v2",
+          "url": {
+            "@type": "string",
+            "@value": "http://host.docker.internal:5678/webhook/bastionpay-graylog"
+          },
+          "skip_tls_verification": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "method": {
+            "@type": "string",
+            "@value": "POST"
+          },
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          },
+          "content_type": {
+            "@type": "string",
+            "@value": "JSON"
+          },
+          "headers": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": ""
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "f9905547-4cff-4158-9e5f-30cb052924ee",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay → n8n | S2_이체 실패 후 환불 완료"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "TRANSFER_REFUNDED 이벤트를 받으면 Graylog 이벤트와 사용자 지정 필드를 JSON으로 n8n Webhook에 전달한다."
+        },
+        "config": {
+          "type": "http-notification-v2",
+          "url": {
+            "@type": "string",
+            "@value": "http://host.docker.internal:5678/webhook/bastionpay-graylog"
+          },
+          "skip_tls_verification": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "method": {
+            "@type": "string",
+            "@value": "POST"
+          },
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          },
+          "content_type": {
+            "@type": "string",
+            "@value": "JSON"
+          },
+          "headers": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": ""
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "d1c3203b-902d-4c31-a89d-730689274a38",
+      "data": {
+        "field_spec": {
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "IP_BLOCKED_REQUEST",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_reason_code}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_event_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "http_method": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_http_method}",
+                "require_values": false
+              }
+            ]
+          },
+          "request_path": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_request_path}",
+                "require_values": false
+              }
+            ]
+          },
+          "trace_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_trace_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "MEDIUM",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:IP_BLOCKED_REQUEST"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 2
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "e60eb4b2-665a-4670-8808-c6094964dfc5"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-05T08:19:44.895Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-11-05T03:42:08.284Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | 차단 IP 요청"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "애플리케이션 차단 목록의 주소가 계속 요청을 보냅니다. 앱 차단이 적용되는지와 테스트 범위를 확인합니다."
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "bbb272da-a2d0-4f44-a6a3-a8f163caad03",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay → n8n | S1_반복 로그인 실패 알림"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "반복 로그인 실패 이벤트가 발생하면 Graylog가 원본 이벤트와 설정된 backlog를 n8n Webhook으로 전송"
+        },
+        "config": {
+          "type": "http-notification-v2",
+          "url": {
+            "@type": "string",
+            "@value": "http://host.docker.internal:5678/webhook/bastionpay-graylog"
+          },
+          "skip_tls_verification": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "method": {
+            "@type": "string",
+            "@value": "POST"
+          },
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          },
+          "content_type": {
+            "@type": "string",
+            "@value": "JSON"
+          },
+          "headers": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": ""
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "input",
+        "version": "1"
+      },
+      "id": "851b671c-c59a-4e30-a8b9-158dc348e58f",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay-App-Filebeat"
+        },
+        "configuration": {
+          "tls_key_file": {
+            "@type": "string",
+            "@value": ""
+          },
+          "port": {
+            "@type": "integer",
+            "@value": 5044
+          },
+          "tls_enable": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "recv_buffer_size": {
+            "@type": "integer",
+            "@value": 1048576
+          },
+          "tcp_keepalive": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "tls_client_auth_cert_file": {
+            "@type": "string",
+            "@value": ""
+          },
+          "bind_address": {
+            "@type": "string",
+            "@value": "0.0.0.0"
+          },
+          "no_beats_prefix": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "tls_cert_file": {
+            "@type": "string",
+            "@value": ""
+          },
+          "tls_client_auth": {
+            "@type": "string",
+            "@value": "disabled"
+          },
+          "charset_name": {
+            "@type": "string",
+            "@value": "UTF-8"
+          },
+          "number_worker_threads": {
+            "@type": "integer",
+            "@value": 16
+          },
+          "tls_key_password": {
+            "@type": "string",
+            "@value": ""
+          }
+        },
+        "static_fields": {},
+        "type": {
+          "@type": "string",
+          "@value": "org.graylog.plugins.beats.Beats2Input"
+        },
+        "global": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "extractors": []
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "7820b208-4c7b-4eec-815a-1303c73d4bfe",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay → n8n | S3_동일 출발지 반복 이체 실패·환불"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "동일 출발지 IP에서 10분 내 TRANSFER_FAILED 이벤트가 2건 이상 탐지되면 Graylog 이벤트와 사용자 정의 필드를 n8n Webhook으로 전달합니다."
+        },
+        "config": {
+          "type": "http-notification-v2",
+          "url": {
+            "@type": "string",
+            "@value": "http://host.docker.internal:5678/webhook/bastionpay-graylog"
+          },
+          "skip_tls_verification": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "method": {
+            "@type": "string",
+            "@value": "POST"
+          },
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          },
+          "content_type": {
+            "@type": "string",
+            "@value": "JSON"
+          },
+          "headers": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": ""
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "97aac4b5-221c-4a08-85ea-9b5a618a24ec",
+      "data": {
+        "field_spec": {
+          "dest_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.dest_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "dest_port": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.dest_port}",
+                "require_values": false
+              }
+            ]
+          },
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.src_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "SNORT_PORTSCAN",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "MEDIUM",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 60000,
+          "query": {
+            "@type": "string",
+            "@value": "rule:snort-portscan"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "000000000000000000000001"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "src_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 5
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 2
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "45290a16-0cdf-443c-b14e-447ac9c7fc97"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-05T06:01:46.622Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 120000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-05T05:48:09.113Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | K5_네트워크 포트스캔 탐지 (Snort NIDS)"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "src_ip당 1분 내 서로 다른 dest_port 15개 이상 접근 (rule:portscan) → Nmap류 포트스캔 추정"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "53c5cae1-f5f9-4194-98e4-e8551298ab5b",
+      "data": {
+        "field_spec": {
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "LOGIN_FAILURE",
+                "require_values": false
+              }
+            ]
+          },
+          "login_subject_hash": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_login_subject_hash}",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_reason_code}",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "MEDIUM",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 60000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:LOGIN_FAILURE"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 5
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 2
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "45290a16-0cdf-443c-b14e-447ac9c7fc97"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-05T08:17:02.522Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 120000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-04T07:46:19.715Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | K2_Hydra 로그인 브루트포스 탐지"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "source_ip당 1분 내 LOGIN_FAILURE 5건 이상 → Hydra류 자동화 추정"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "d3b3ca8d-96d2-4542-824c-7ec77696d3ba",
+      "data": {
+        "field_spec": {
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "request_path": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_request_path}",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_reason_code}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "AUTHENTICATION_REQUIRED",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 60000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:AUTHENTICATION_REQUIRED"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip"
+          ],
+          "series": [
+            {
+              "type": "card",
+              "id": "card-filebeat_request_path",
+              "field": "filebeat_request_path"
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "card-filebeat_request_path"
+              },
+              "right": {
+                "expr": "number",
+                "value": 15
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "45290a16-0cdf-443c-b14e-447ac9c7fc97"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": {
+          "@type": "string",
+          "@value": ""
+        },
+        "matched_at": "2026-11-05T05:21:13.361Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 60000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-05T05:20:42.785Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | K1_웹 스캐너 탐지 (Nikto/Gobuster)"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "source_ip당 1분 내 서로 다른 request_path 15개 이상에 AUTHENTICATION_REQUIRED(401) 발생 → Nikto/Gobuster류 경로 스캐너 추정"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "pipeline",
+        "version": "1"
+      },
+      "id": "178a63aa-9355-45b5-9ed2-a743543cc9f9",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "fill-message"
+        },
+        "description": {
+          "@type": "string",
+          "@value": ""
+        },
+        "source": {
+          "@type": "string",
+          "@value": "pipeline \"fill-message\"\nstage 0 match either\nrule \"fill message with event info\"\nend"
+        },
+        "connected_streams": [
+          {
+            "@type": "string",
+            "@value": "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          },
+          {
+            "@type": "string",
+            "@value": "000000000000000000000001"
+          }
+        ]
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "99a5b190-5b7e-4a3e-956b-9a78b312584d",
+      "data": {
+        "field_spec": {
+          "member_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_member_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_event_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_reason_code}",
+                "require_values": false
+              }
+            ]
+          },
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "currency": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_currency}",
+                "require_values": false
+              }
+            ]
+          },
+          "outcome": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_outcome}",
+                "require_values": false
+              }
+            ]
+          },
+          "trace_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_trace_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "amount": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_amount}",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_severity}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_event_type}",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 600000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:TRANSFER_REFUNDED AND filebeat_outcome:FAILURE"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip",
+            "filebeat_event_type",
+            "filebeat_severity",
+            "filebeat_reason_code"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 2
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 2
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "7820b208-4c7b-4eec-815a-1303c73d4bfe"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": {
+          "@type": "string",
+          "@value": ""
+        },
+        "matched_at": "2026-11-06T05:09:18.182Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-11-05T03:42:08.156Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | S3_동일 출발지 반복 이체 실패·환불"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "같은 출발지 IP에서 mock 은행의 수취 계좌 처리 실패로 환불된 이체가 10분 내 2건 이상 발생 → 이체 내역과 계정 상태 확인"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "d92aa753-5dac-4d3e-9d40-2d362f8cb24f",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "wazuh_rule_id:100280 OR wazuh_rule_id:100281"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [],
+          "execute_every_ms": 300000,
+          "event_limit": 100,
+          "group_by": [],
+          "series": [],
+          "conditions": {
+            "expression": null
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [],
+        "remediation_steps": null,
+        "matched_at": "2026-11-05T06:23:23.776Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-11-02T01:09:41.153Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | 차단 IP 후 로그인·이체 시도"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Wazuh 상관 룰 100280/100281이 10분 이내 차단 IP의 로그인 성공 또는 이체 요청을 탐지한 결과를 Graylog에 표시합니다. 티켓과 Discord 알림은 기존 Wazuh → n8n 연동에서 생성합니다."
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "60298fa1-0db7-4b1f-ba8d-dbdeb6b1d878",
+      "data": {
+        "field_spec": {
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "CRITICAL",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "TIER_CHANGED",
+                "require_values": false
+              }
+            ]
+          },
+          "src_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 60000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:TIER_CHANGED AND NOT filebeat_reason_code:(PROMOTED_BY_VOLUME OR DEMOTED_INACTIVE)"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 1
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "45290a16-0cdf-443c-b14e-447ac9c7fc97"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-06T05:11:48.088Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-05T03:42:08.035Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | K6_비정상 ADMIN 권한 승급 침해 탐지"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [
+          "src_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "정상 승급 사유 없이 ADMIN 권한/등급이 변경된 실제 침해 사고 탐지"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "b529a52f-dba1-4d95-b2c4-ddcee3490c35",
+      "data": {
+        "field_spec": {
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "LOGIN_FAILURE",
+                "require_values": false
+              }
+            ]
+          },
+          "login_subject_hash": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_login_subject_hash}",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_reason_code}",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "MEDIUM",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 1800000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:LOGIN_FAILURE"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 300000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 8
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 2
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "45290a16-0cdf-443c-b14e-447ac9c7fc97"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-05T06:47:04.662Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 1200000,
+          "backlog_size": 5
+        },
+        "updated_at": "2026-11-04T07:46:58.062Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | K4_저속 브루트포스 탐지 (Low-and-Slow)"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "source_ip당 30분 내 LOGIN_FAILURE 8건 이상 → 탐지 회피 목적의 저속 자동화 추정"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "e60eb4b2-665a-4670-8808-c6094964dfc5",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay → n8n | E_차단 IP 요청"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "IP_BLOCKED_REQUEST 반복 → n8n Security Alert Intake(티켓 생성 경로)"
+        },
+        "config": {
+          "type": "http-notification-v2",
+          "url": {
+            "@type": "string",
+            "@value": "http://host.docker.internal:5678/webhook/bastionpay-graylog"
+          },
+          "skip_tls_verification": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "method": {
+            "@type": "string",
+            "@value": "POST"
+          },
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          },
+          "content_type": {
+            "@type": "string",
+            "@value": "JSON"
+          },
+          "headers": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": ""
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "fa569643-b00a-462e-81c7-284b0901741e",
+      "data": {
+        "field_spec": {
+          "source_ip": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_source_ip}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_type": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "API_AUTH_FAILED",
+                "require_values": false
+              }
+            ]
+          },
+          "reason_code": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_reason_code}",
+                "require_values": false
+              }
+            ]
+          },
+          "event_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_event_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "http_method": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_http_method}",
+                "require_values": false
+              }
+            ]
+          },
+          "request_path": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_request_path}",
+                "require_values": false
+              }
+            ]
+          },
+          "trace_id": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "${source.filebeat_trace_id}",
+                "require_values": false
+              }
+            ]
+          },
+          "severity": {
+            "data_type": "string",
+            "providers": [
+              {
+                "type": "template-v1",
+                "template": "MEDIUM",
+                "require_values": false
+              }
+            ]
+          }
+        },
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "filebeat_app_name:bastionpay AND filebeat_event_type:API_AUTH_FAILED"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "14e430ad-180a-40cd-9fbd-e5bc8d3acd51"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "filebeat_source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 3
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "44d507fb-2989-4b6e-8de7-a4f0644d8a79"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-11-06T05:24:44.932Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 60000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-11-05T11:19:34.415Z",
+        "title": {
+          "@type": "string",
+          "@value": "BastionPay | 서버 API 인증 실패"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [
+          "source_ip"
+        ],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "n8n/API 호출이 잘못된 키 또는 비활성 API 설정으로 거부되었습니다. 호출자와 키 배포 상태를 확인합니다. 키 값은 로그/알림에 넣지 않습니다."
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    }
+  ]
+}

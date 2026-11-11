@@ -85,6 +85,7 @@ public class IncidentService {
         List<SecurityEventEntity> collected = events.findBySourceIpAndOccurredAtGreaterThanEqualOrderByIdDesc(srcIp, since, PageRequest.of(0, MAX_EVENTS));
         Severity worst = worstOf(collected);
         Summary summary = summarize(srcIp, collected, worst);
+        // 티켓 등급은 Graylog/n8n 이 보낸 severity 를 따른다. 넘어온 값이 없을 때만 수집한 이벤트 중 가장 높은 등급(worst)으로 떨어진다.
         Severity wanted = severity != null && severity.compareTo(Severity.LOW) >= 0 ? severity : worst;
         String ticketTitle = title == null || title.isBlank() ? "보안 인시던트: " + srcIp + " (" + collected.size() + "건)" : title.strip();
         if (ticketTitle.length() > 200) ticketTitle = ticketTitle.substring(0, 200);
@@ -92,13 +93,13 @@ public class IncidentService {
         Incident incident = incidents.findBySrcIpAndStatus(srcIp, Incident.Status.OPEN).orElse(null);
         boolean created = incident == null;
         if (created) incident = new Incident(srcIp, actor.label(), now);
-        incident.refresh(ticketTitle, max(wanted, worst), summary.text(), collected.size(), summary.actions(), now);
+        incident.refresh(ticketTitle, wanted, summary.text(), collected.size(), summary.actions(), now);
         try {
             incident = incidents.saveAndFlush(incident);
         } catch (DataIntegrityViolationException e) {
             // 같은 IP 의 티켓이 동시에 만들어졌다: 먼저 만들어진 열린 티켓을 갱신한다
             incident = incidents.findBySrcIpAndStatus(srcIp, Incident.Status.OPEN).orElseThrow(() -> e);
-            incident.refresh(ticketTitle, max(wanted, worst), summary.text(), collected.size(), summary.actions(), now);
+            incident.refresh(ticketTitle, wanted, summary.text(), collected.size(), summary.actions(), now);
             incident = incidents.saveAndFlush(incident);
             created = false;
         }
