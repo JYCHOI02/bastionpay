@@ -1,1 +1,13 @@
-__n8n_BLANK_VALUE_e5362baf-c777-4d57-a609-6eaf1f9e87f6
+# n8n webhook 인증 키 (placeholder — 실제 키를 넣지 마세요)
+#
+# 용도: Wazuh -> n8n 경보 전송 시 헤더 인증에 쓰는 공유 키.
+#   - ossec.conf 의 <integration><api_key> 값
+#   - n8n "Webhook(Wazuh)" 노드 Header Auth(X-Wazuh-Webhook-Key) 값
+#   두 곳에 같은 값을 넣어야 합니다.
+#
+# 만드는 법 (아무 무작위 문자열):
+#   PowerShell : [guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")
+#   Git Bash   : openssl rand -hex 32
+#
+# 실제 값은 git 에 올리지 말고 .env 등 안전한 곳에 보관하세요.
+REPLACE_WITH_YOUR_WAZUH_WEBHOOK_KEY
